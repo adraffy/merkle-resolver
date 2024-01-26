@@ -27,6 +27,7 @@ contract MerkleResolver is
 
 	event Invalidated(bytes32 indexed node);
 	event NewProof(bytes32 indexed node, bytes32 root);
+	event NewShape(bytes32 shape, bytes32[] indexed cells);
 
 	address constant ENS_REGISTRY = 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
 	uint256 constant COIN_TYPE_ETH = 60;
@@ -54,7 +55,7 @@ contract MerkleResolver is
 	mapping(bytes32 => uint256) _size;
 	mapping(bytes32 => bytes32) _shape;
 	mapping(bytes32 => bytes32) _root;
-	mapping(bytes32 => uint256) _slot;
+	mapping(bytes => uint256) _slot;
 	mapping(bytes => bytes) _value;
 
 	function requireApproval(bytes32 node) internal view {
@@ -78,8 +79,9 @@ contract MerkleResolver is
 		} else {
 			_size[shape] = cells.length;
 			for (uint256 i; i < cells.length; i++) {
-				_slot[keccak256(abi.encode(shape, cells[i]))] = i + 1;
+				_slot[abi.encode(shape, cells[i])] = i + 1;
 			}
+			emit NewShape(shape, cells);
 		}
 		return shape;
 	}
@@ -111,7 +113,7 @@ contract MerkleResolver is
 		returns (uint256 slot)
 	{
 		(bytes32 shape, uint256 size) = _findShape(node);
-		slot = _slot[keccak256(abi.encode(shape, cell))];
+		slot = _slot[abi.encode(shape, cell)];
 		require(slot <= size, "bad cell");
 	}
 
